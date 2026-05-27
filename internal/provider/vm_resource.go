@@ -468,9 +468,13 @@ func mapVMToState(ctx context.Context, vm *client.VM, state *vmResourceModel, di
 	}
 	if vm.Hostname != "" {
 		state.Hostname = types.StringValue(vm.Hostname)
+	} else {
+		state.Hostname = types.StringNull()
 	}
 	if vm.Password != "" {
 		state.Password = types.StringValue(vm.Password)
+	} else {
+		state.Password = types.StringNull()
 	}
 
 	if len(vm.Tags) > 0 {
