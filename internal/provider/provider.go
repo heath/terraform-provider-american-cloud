@@ -116,6 +116,9 @@ func (p *americancloudProvider) DataSources(_ context.Context) []func() datasour
 func (p *americancloudProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewVMResource,
+		NewIsolatedNetworkResource,
+		NewVPCResource,
+		NewVPCTierResource,
 	}
 }
 
