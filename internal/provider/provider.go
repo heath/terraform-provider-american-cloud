@@ -114,7 +114,9 @@ func (p *americancloudProvider) DataSources(_ context.Context) []func() datasour
 }
 
 func (p *americancloudProvider) Resources(_ context.Context) []func() resource.Resource {
-	return []func() resource.Resource{}
+	return []func() resource.Resource{
+		NewVMResource,
+	}
 }
 
 // stringValueOrEnv returns the Terraform config value if set, otherwise
