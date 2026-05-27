@@ -120,6 +120,10 @@ func (p *americancloudProvider) Resources(_ context.Context) []func() resource.R
 		NewVPCResource,
 		NewVPCTierResource,
 		NewPublicIPResource,
+		NewFirewallRuleResource,
+		NewPortForwardingResource,
+		NewEgressRuleResource,
+		NewLoadBalancerRuleResource,
 	}
 }
 
