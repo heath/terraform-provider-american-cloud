@@ -455,7 +455,9 @@ func mapVMToState(ctx context.Context, vm *client.VM, state *vmResourceModel, di
 	state.RootDiskGB = types.Int64Value(int64(vm.RootDiskGB))
 	state.Created = types.StringValue(vm.Created)
 
-	if vm.VMPackage != "" {
+	// Preserve the planned vm_package value — the API returns the description
+	// (e.g. "Standard Custom") instead of the label (e.g. "standard-custom")
+	if vm.VMPackage != "" && state.VMPackage.IsNull() {
 		state.VMPackage = types.StringValue(vm.VMPackage)
 	}
 	if vm.IPAddress != "" {
