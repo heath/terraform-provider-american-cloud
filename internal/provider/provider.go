@@ -106,7 +106,11 @@ func (p *americancloudProvider) Configure(ctx context.Context, req provider.Conf
 }
 
 func (p *americancloudProvider) DataSources(_ context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{}
+	return []func() datasource.DataSource{
+		NewImagesDataSource,
+		NewRegionsDataSource,
+		NewPackagesDataSource,
+	}
 }
 
 func (p *americancloudProvider) Resources(_ context.Context) []func() resource.Resource {
