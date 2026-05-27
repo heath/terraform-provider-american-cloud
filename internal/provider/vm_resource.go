@@ -324,11 +324,120 @@ func (r *vmResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 }
 
 func (r *vmResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	resp.Diagnostics.AddError("Update not yet implemented", "VM update will be added in Phase 4.")
+	var plan vmResourceModel
+	var state vmResourceModel
+	diags := req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	diags = req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	updateTimeout := 15 * time.Minute
+	if plan.Timeouts != nil && !plan.Timeouts.Update.IsNull() {
+		d, err := time.ParseDuration(plan.Timeouts.Update.ValueString())
+		if err == nil {
+			updateTimeout = d
+		}
+	}
+	ctx, cancel := context.WithTimeout(ctx, updateTimeout)
+	defer cancel()
+
+	id := state.ID.ValueString()
+
+	// Hostname change
+	if !plan.Hostname.Equal(state.Hostname) && !plan.Hostname.IsNull() && !plan.Hostname.IsUnknown() {
+		err := r.client.UpdateVMHostname(ctx, id, plan.Hostname.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("Error updating VM hostname", err.Error())
+			return
+		}
+	}
+
+	// Name change (hostname endpoint doubles as rename)
+	if !plan.Name.Equal(state.Name) {
+		err := r.client.UpdateVMHostname(ctx, id, plan.Name.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("Error updating VM name", err.Error())
+			return
+		}
+	}
+
+	// Scale CPU/memory
+	cpuChanged := !plan.CPU.Equal(state.CPU) && !plan.CPU.IsNull() && !plan.CPU.IsUnknown()
+	memChanged := !plan.MemoryMB.Equal(state.MemoryMB) && !plan.MemoryMB.IsNull() && !plan.MemoryMB.IsUnknown()
+	if cpuChanged || memChanged {
+		cpu := 0
+		mem := 0
+		if cpuChanged {
+			cpu = int(plan.CPU.ValueInt64())
+		}
+		if memChanged {
+			mem = int(plan.MemoryMB.ValueInt64())
+		}
+		err := r.client.ScaleVM(ctx, id, cpu, mem)
+		if err != nil {
+			resp.Diagnostics.AddError("Error scaling VM", err.Error())
+			return
+		}
+	}
+
+	// Resize root disk (grow only)
+	if !plan.RootDiskGB.Equal(state.RootDiskGB) && !plan.RootDiskGB.IsNull() && !plan.RootDiskGB.IsUnknown() {
+		newSize := int(plan.RootDiskGB.ValueInt64())
+		err := r.client.ResizeVMDisk(ctx, id, newSize, true)
+		if err != nil {
+			resp.Diagnostics.AddError("Error resizing VM disk", err.Error())
+			return
+		}
+	}
+
+	// Re-read VM to get updated state
+	vm, err := r.client.GetVM(ctx, id)
+	if err != nil {
+		resp.Diagnostics.AddError("Error reading VM after update", err.Error())
+		return
+	}
+
+	mapVMToState(ctx, vm, &plan, &resp.Diagnostics)
+
+	diags = resp.State.Set(ctx, plan)
+	resp.Diagnostics.Append(diags...)
 }
 
 func (r *vmResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	resp.Diagnostics.AddError("Delete not yet implemented", "VM delete will be added in Phase 4.")
+	var state vmResourceModel
+	diags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	deleteTimeout := 15 * time.Minute
+	if state.Timeouts != nil && !state.Timeouts.Delete.IsNull() {
+		d, err := time.ParseDuration(state.Timeouts.Delete.ValueString())
+		if err == nil {
+			deleteTimeout = d
+		}
+	}
+	ctx, cancel := context.WithTimeout(ctx, deleteTimeout)
+	defer cancel()
+
+	id := state.ID.ValueString()
+	err := r.client.DeleteVM(ctx, id)
+	if err != nil {
+		if client.IsNotFound(err) {
+			return
+		}
+		resp.Diagnostics.AddError("Error deleting VM", err.Error())
+		return
+	}
+
+	err = r.client.WaitForVMDeleted(ctx, id, 10*time.Second)
+	if err != nil {
+		resp.Diagnostics.AddError("Error waiting for VM deletion", err.Error())
+	}
 }
 
 func (r *vmResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
