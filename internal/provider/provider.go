@@ -119,6 +119,7 @@ func (p *americancloudProvider) Resources(_ context.Context) []func() resource.R
 		NewIsolatedNetworkResource,
 		NewVPCResource,
 		NewVPCTierResource,
+		NewPublicIPResource,
 	}
 }
 
