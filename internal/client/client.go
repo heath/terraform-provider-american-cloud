@@ -83,8 +83,8 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body interf
 	if c.BearerToken != "" {
 		req.Header.Set("Authorization", "Bearer "+c.BearerToken)
 	} else {
-		req.Header.Set("client-id", c.ClientID)
-		req.Header.Set("client-secret", c.ClientSecret)
+		req.Header.Set("X-API-Client-ID", c.ClientID)
+		req.Header.Set("X-API-Client-Secret", c.ClientSecret)
 	}
 
 	resp, err := c.HTTPClient.Do(req)

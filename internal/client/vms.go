@@ -132,9 +132,9 @@ func (c *Client) WaitForVMReady(ctx context.Context, id string, pollInterval tim
 		}
 
 		switch vm.Status {
-		case "Running", "running":
+		case "Running", "running", "STARTED", "Started":
 			return vm, nil
-		case "Error", "error", "Failed", "failed":
+		case "Error", "error", "Failed", "failed", "ERROR", "FAILED":
 			return vm, fmt.Errorf("VM %s reached error state: %s", id, vm.Status)
 		}
 

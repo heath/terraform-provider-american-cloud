@@ -4,3 +4,5 @@ terraform-provider-americancloud
 *.tfstate.backup
 .terraformrc
 *.tfvars
+.envrc
+.env
