@@ -1,0 +1,6 @@
+terraform-provider-americancloud
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraformrc
+*.tfvars
