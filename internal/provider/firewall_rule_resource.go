@@ -3,7 +3,10 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
@@ -15,8 +18,9 @@ import (
 )
 
 var (
-	_ resource.Resource              = &firewallRuleResource{}
-	_ resource.ResourceWithConfigure = &firewallRuleResource{}
+	_ resource.Resource                = &firewallRuleResource{}
+	_ resource.ResourceWithConfigure   = &firewallRuleResource{}
+	_ resource.ResourceWithImportState = &firewallRuleResource{}
 )
 
 func NewFirewallRuleResource() resource.Resource {
@@ -94,9 +98,15 @@ func (r *firewallRuleResource) Schema(_ context.Context, _ resource.SchemaReques
 			},
 			"state": schema.StringAttribute{
 				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"created": schema.StringAttribute{
 				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}
@@ -124,8 +134,8 @@ func (r *firewallRuleResource) Create(ctx context.Context, req resource.CreateRe
 
 	createReq := &client.CreateFirewallRuleRequest{
 		Protocol:       plan.Protocol.ValueString(),
-		StartPort:      int(plan.StartPort.ValueInt64()),
-		EndPort:        int(plan.EndPort.ValueInt64()),
+		StartPort:      strconv.FormatInt(plan.StartPort.ValueInt64(), 10),
+		EndPort:        strconv.FormatInt(plan.EndPort.ValueInt64(), 10),
 		SourceCIDRList: plan.SourceCIDRList.ValueString(),
 	}
 	if !plan.Type.IsNull() {
@@ -177,8 +187,12 @@ func (r *firewallRuleResource) Read(ctx context.Context, req resource.ReadReques
 	}
 
 	state.Protocol = types.StringValue(found.Protocol)
-	state.StartPort = types.Int64Value(int64(found.StartPort))
-	state.EndPort = types.Int64Value(int64(found.EndPort))
+	if v, err := strconv.ParseInt(found.StartPort, 10, 64); err == nil {
+		state.StartPort = types.Int64Value(v)
+	}
+	if v, err := strconv.ParseInt(found.EndPort, 10, 64); err == nil {
+		state.EndPort = types.Int64Value(v)
+	}
 	state.SourceCIDRList = types.StringValue(found.SourceCIDRList)
 	state.State = types.StringValue(found.State)
 	state.Created = types.StringValue(found.Created)
@@ -206,4 +220,17 @@ func (r *firewallRuleResource) Delete(ctx context.Context, req resource.DeleteRe
 	if err != nil && !client.IsNotFound(err) {
 		resp.Diagnostics.AddError("Error deleting firewall rule", err.Error())
 	}
+}
+
+func (r *firewallRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	parts := strings.SplitN(req.ID, "/", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		resp.Diagnostics.AddError(
+			"Invalid import ID",
+			"Expected format: ip_address_id/rule_id",
+		)
+		return
+	}
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("ip_address_id"), parts[0])...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), parts[1])...)
 }

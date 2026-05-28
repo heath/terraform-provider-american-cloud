@@ -25,6 +25,12 @@ type Client struct {
 	HTTPClient   *http.Client
 }
 
+// ListResponse wraps paginated list endpoint responses.
+type ListResponse[T any] struct {
+	Data  []T `json:"data"`
+	Total int `json:"total"`
+}
+
 // NewClient creates a new American Cloud API client.
 // It supports two auth modes:
 //   - Bearer token (set BearerToken)

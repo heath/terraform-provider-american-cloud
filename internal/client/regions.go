@@ -11,12 +11,12 @@ type Region struct {
 
 // ListRegions returns all available regions.
 func (c *Client) ListRegions(ctx context.Context) ([]Region, error) {
-	var regions []Region
-	err := c.doRequest(ctx, "GET", "/api/v1/compute/regions", nil, &regions)
+	var resp ListResponse[Region]
+	err := c.doRequest(ctx, "GET", "/api/v1/compute/regions", nil, &resp)
 	if err != nil {
 		return nil, err
 	}
-	return regions, nil
+	return resp.Data, nil
 }
 
 // GetRegion returns a single region by ID.

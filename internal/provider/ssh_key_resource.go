@@ -56,6 +56,9 @@ func (r *sshKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 			},
 			"fingerprint": schema.StringAttribute{
 				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"private_key": schema.StringAttribute{
 				Computed:    true,

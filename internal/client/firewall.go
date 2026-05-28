@@ -6,22 +6,22 @@ import "context"
 type FirewallRule struct {
 	ID             string `json:"id"`
 	Protocol       string `json:"protocol"`
-	StartPort      int    `json:"start_port"`
-	EndPort        int    `json:"end_port"`
-	IPAddressID    string `json:"ip_address_id"`
-	IPAddress      string `json:"ip_address"`
+	StartPort      string `json:"startPort"`
+	EndPort        string `json:"endPort"`
+	IPAddressID    string `json:"ipAddressId"`
+	IPAddress      string `json:"ipAddress"`
 	State          string `json:"state"`
-	SourceCIDRList string `json:"source_cidr_list"`
+	SourceCIDRList string `json:"sourceCidrList"`
 	Type           string `json:"type"`
-	Created        string `json:"created"`
+	Created        string `json:"createdAt"`
 }
 
 // CreateFirewallRuleRequest is the request body for creating a firewall rule.
 type CreateFirewallRuleRequest struct {
 	Protocol       string `json:"protocol"`
-	StartPort      int    `json:"start_port"`
-	EndPort        int    `json:"end_port"`
-	SourceCIDRList string `json:"source_cidr_list"`
+	StartPort      string `json:"startPort"`
+	EndPort        string `json:"endPort"`
+	SourceCIDRList string `json:"sourceCidrList"`
 	Type           string `json:"type,omitempty"`
 }
 
@@ -50,24 +50,24 @@ func (c *Client) DeleteFirewallRule(ctx context.Context, ruleID string) error {
 // PortForwardingRule represents a port forwarding rule.
 type PortForwardingRule struct {
 	ID            string `json:"id"`
-	PrivatePort   int    `json:"private_port"`
-	PublicPort    int    `json:"public_port"`
+	PrivatePort   string `json:"privatePort"`
+	PublicPort    string `json:"publicPort"`
 	Protocol      string `json:"protocol"`
-	VMID          string `json:"vm_id"`
-	VMName        string `json:"vm_name"`
-	IPAddressID   string `json:"ip_address_id"`
-	IPAddress     string `json:"ip_address"`
+	VMID          string `json:"vmId"`
+	VMName        string `json:"vmName"`
+	IPAddressID   string `json:"ipAddressId"`
+	IPAddress     string `json:"ipAddress"`
 	State         string `json:"state"`
-	Created       string `json:"created"`
+	Created       string `json:"createdAt"`
 }
 
 // CreatePortForwardingRuleRequest is the request body for creating a port forwarding rule.
 type CreatePortForwardingRuleRequest struct {
-	PrivatePort  int    `json:"private_port"`
-	PublicPort   int    `json:"public_port"`
+	PrivatePort  string `json:"privatePort"`
+	PublicPort   string `json:"publicPort"`
 	Protocol     string `json:"protocol"`
-	VMID         string `json:"vm_id"`
-	OpenFirewall bool   `json:"open_firewall,omitempty"`
+	VMID         string `json:"vmId"`
+	OpenFirewall string `json:"openFirewall,omitempty"`
 }
 
 // ListPortForwardingRules returns all port forwarding rules for a public IP.
@@ -96,23 +96,23 @@ func (c *Client) DeletePortForwardingRule(ctx context.Context, ruleID string) er
 type EgressRule struct {
 	ID             string `json:"id"`
 	Protocol       string `json:"protocol"`
-	StartPort      int    `json:"start_port"`
-	EndPort        int    `json:"end_port"`
-	NetworkID      string `json:"network_id"`
+	StartPort      string `json:"startPort"`
+	EndPort        string `json:"endPort"`
+	NetworkID      string `json:"networkId"`
 	State          string `json:"state"`
-	SourceCIDRList string `json:"source_cidr_list"`
-	DestCIDRList   string `json:"dest_cidr_list"`
-	Created        string `json:"created"`
+	SourceCIDRList string `json:"sourceCidrList"`
+	DestCIDRList   string `json:"destCidrList"`
+	Created        string `json:"createdAt"`
 }
 
 // CreateEgressRuleRequest is the request body for creating an egress rule.
 type CreateEgressRuleRequest struct {
 	Protocol       string `json:"protocol"`
-	StartPort      int    `json:"start_port"`
-	EndPort        int    `json:"end_port"`
-	SourceCIDRList string `json:"source_cidr_list,omitempty"`
-	DestCIDRList   string `json:"dest_cidr_list,omitempty"`
-	NetworkID      string `json:"network_id"`
+	StartPort      string `json:"startPort"`
+	EndPort        string `json:"endPort"`
+	SourceCIDRList string `json:"sourceCidrList,omitempty"`
+	DestCIDRList   string `json:"destCidrList,omitempty"`
+	NetworkID      string `json:"networkId"`
 }
 
 // GetEgressRule returns a single egress rule by ID.
@@ -144,26 +144,26 @@ func (c *Client) DeleteEgressRule(ctx context.Context, id string) error {
 type LoadBalancerRule struct {
 	ID             string `json:"id"`
 	Name           string `json:"name"`
-	PublicPort     int    `json:"public_port"`
-	PrivatePort    int    `json:"private_port"`
+	PublicPort     string `json:"publicPort"`
+	PrivatePort    string `json:"privatePort"`
 	Algorithm      string `json:"algorithm"`
 	Protocol       string `json:"protocol"`
 	State          string `json:"state"`
-	IPAddressID    string `json:"ip_address_id"`
-	IPAddress      string `json:"ip_address"`
-	NetworkID      string `json:"network_id"`
-	SourceCIDRList string `json:"source_cidr_list"`
-	Created        string `json:"created"`
+	IPAddressID    string `json:"ipAddressId"`
+	IPAddress      string `json:"ipAddress"`
+	NetworkID      string `json:"networkId"`
+	SourceCIDRList string `json:"sourceCidrList"`
+	Created        string `json:"createdAt"`
 }
 
 // CreateLoadBalancerRuleRequest is the request body for creating a LB rule.
 type CreateLoadBalancerRuleRequest struct {
 	Name           string `json:"name"`
 	Algorithm      string `json:"algorithm"`
-	PublicPort     int    `json:"public_port"`
-	PrivatePort    int    `json:"private_port"`
+	PublicPort     string `json:"publicPort"`
+	PrivatePort    string `json:"privatePort"`
 	Protocol       string `json:"protocol,omitempty"`
-	SourceCIDRList string `json:"source_cidr_list,omitempty"`
+	SourceCIDRList string `json:"sourceCidrList,omitempty"`
 	Description    string `json:"description,omitempty"`
 }
 

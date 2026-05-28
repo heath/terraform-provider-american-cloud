@@ -24,12 +24,12 @@ func (c *Client) ListImages(ctx context.Context, os, version string) ([]Image, e
 		query.Set("version", version)
 	}
 
-	var images []Image
-	err := c.doRequestWithQuery(ctx, "GET", "/api/v1/compute/images", query, nil, &images)
+	var resp ListResponse[Image]
+	err := c.doRequestWithQuery(ctx, "GET", "/api/v1/compute/images", query, nil, &resp)
 	if err != nil {
 		return nil, err
 	}
-	return images, nil
+	return resp.Data, nil
 }
 
 // GetImage returns a single image by ID.

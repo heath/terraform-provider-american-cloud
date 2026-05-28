@@ -3,7 +3,10 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
@@ -15,8 +18,9 @@ import (
 )
 
 var (
-	_ resource.Resource              = &loadBalancerRuleResource{}
-	_ resource.ResourceWithConfigure = &loadBalancerRuleResource{}
+	_ resource.Resource                = &loadBalancerRuleResource{}
+	_ resource.ResourceWithConfigure   = &loadBalancerRuleResource{}
+	_ resource.ResourceWithImportState = &loadBalancerRuleResource{}
 )
 
 func NewLoadBalancerRuleResource() resource.Resource {
@@ -97,9 +101,15 @@ func (r *loadBalancerRuleResource) Schema(_ context.Context, _ resource.SchemaRe
 			},
 			"state": schema.StringAttribute{
 				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"created": schema.StringAttribute{
 				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}
@@ -128,8 +138,8 @@ func (r *loadBalancerRuleResource) Create(ctx context.Context, req resource.Crea
 	createReq := &client.CreateLoadBalancerRuleRequest{
 		Name:        plan.Name.ValueString(),
 		Algorithm:   plan.Algorithm.ValueString(),
-		PublicPort:  int(plan.PublicPort.ValueInt64()),
-		PrivatePort: int(plan.PrivatePort.ValueInt64()),
+		PublicPort:  strconv.FormatInt(plan.PublicPort.ValueInt64(), 10),
+		PrivatePort: strconv.FormatInt(plan.PrivatePort.ValueInt64(), 10),
 	}
 	if !plan.Protocol.IsNull() {
 		createReq.Protocol = plan.Protocol.ValueString()
@@ -187,8 +197,12 @@ func (r *loadBalancerRuleResource) Read(ctx context.Context, req resource.ReadRe
 
 	state.Name = types.StringValue(found.Name)
 	state.Algorithm = types.StringValue(found.Algorithm)
-	state.PublicPort = types.Int64Value(int64(found.PublicPort))
-	state.PrivatePort = types.Int64Value(int64(found.PrivatePort))
+	if v, err := strconv.ParseInt(found.PublicPort, 10, 64); err == nil {
+		state.PublicPort = types.Int64Value(v)
+	}
+	if v, err := strconv.ParseInt(found.PrivatePort, 10, 64); err == nil {
+		state.PrivatePort = types.Int64Value(v)
+	}
 	state.State = types.StringValue(found.State)
 	state.Created = types.StringValue(found.Created)
 	if found.Protocol != "" {
@@ -250,4 +264,17 @@ func (r *loadBalancerRuleResource) Delete(ctx context.Context, req resource.Dele
 	if err != nil && !client.IsNotFound(err) {
 		resp.Diagnostics.AddError("Error deleting load balancer rule", err.Error())
 	}
+}
+
+func (r *loadBalancerRuleResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	parts := strings.SplitN(req.ID, "/", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		resp.Diagnostics.AddError(
+			"Invalid import ID",
+			"Expected format: ip_address_id/rule_id",
+		)
+		return
+	}
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("ip_address_id"), parts[0])...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), parts[1])...)
 }

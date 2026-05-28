@@ -146,10 +146,16 @@ func (r *vmResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *r
 			"status": schema.StringAttribute{
 				Computed:    true,
 				Description: "Current status of the VM (e.g. Running, Stopped).",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"ip_address": schema.StringAttribute{
 				Computed:    true,
 				Description: "The IP address assigned to the VM.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"hostname": schema.StringAttribute{
 				Optional:    true,
@@ -159,6 +165,9 @@ func (r *vmResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *r
 			"created": schema.StringAttribute{
 				Computed:    true,
 				Description: "Timestamp when the VM was created.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"password": schema.StringAttribute{
 				Computed:    true,

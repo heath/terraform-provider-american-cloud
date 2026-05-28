@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -93,9 +94,15 @@ func (r *egressRuleResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"state": schema.StringAttribute{
 				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"created": schema.StringAttribute{
 				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}
@@ -123,8 +130,8 @@ func (r *egressRuleResource) Create(ctx context.Context, req resource.CreateRequ
 
 	createReq := &client.CreateEgressRuleRequest{
 		Protocol:  plan.Protocol.ValueString(),
-		StartPort: int(plan.StartPort.ValueInt64()),
-		EndPort:   int(plan.EndPort.ValueInt64()),
+		StartPort: strconv.FormatInt(plan.StartPort.ValueInt64(), 10),
+		EndPort:   strconv.FormatInt(plan.EndPort.ValueInt64(), 10),
 		NetworkID: plan.NetworkID.ValueString(),
 	}
 	if !plan.SourceCIDRList.IsNull() {
@@ -167,8 +174,12 @@ func (r *egressRuleResource) Read(ctx context.Context, req resource.ReadRequest,
 	}
 
 	state.Protocol = types.StringValue(rule.Protocol)
-	state.StartPort = types.Int64Value(int64(rule.StartPort))
-	state.EndPort = types.Int64Value(int64(rule.EndPort))
+	if v, err := strconv.ParseInt(rule.StartPort, 10, 64); err == nil {
+		state.StartPort = types.Int64Value(v)
+	}
+	if v, err := strconv.ParseInt(rule.EndPort, 10, 64); err == nil {
+		state.EndPort = types.Int64Value(v)
+	}
 	state.NetworkID = types.StringValue(rule.NetworkID)
 	state.State = types.StringValue(rule.State)
 	state.Created = types.StringValue(rule.Created)

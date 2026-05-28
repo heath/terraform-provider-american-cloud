@@ -5,19 +5,19 @@ import "context"
 // PublicIP represents a public IP address.
 type PublicIP struct {
 	ID                    string `json:"id"`
-	IPAddress             string `json:"ip_address"`
-	NetworkID             string `json:"network_id"`
-	VMID                  string `json:"vm_id"`
-	VMName                string `json:"vm_name"`
+	IPAddress             string `json:"ipAddress"`
+	NetworkID             string `json:"networkId"`
+	VMID                  string `json:"vmId"`
+	VMName                string `json:"vmName"`
 	Status                string `json:"status"`
 	Region                string `json:"region"`
-	IsSourceNat           bool   `json:"is_source_nat"`
-	IsStaticNat           bool   `json:"is_static_nat"`
-	HasFirewallRules      bool   `json:"has_firewall_rules"`
-	VPCID                 string `json:"vpc_id"`
-	VPCName               string `json:"vpc_name"`
-	AssociatedNetworkID   string `json:"associated_network_id"`
-	AssociatedNetworkName string `json:"associated_network_name"`
+	IsSourceNat           bool   `json:"isSourceNat"`
+	IsStaticNat           bool   `json:"isStaticNat"`
+	HasFirewallRules      bool   `json:"hasFirewallRules"`
+	VPCID                 string `json:"vpcId"`
+	VPCName               string `json:"vpcName"`
+	AssociatedNetworkID   string `json:"associatedNetworkId"`
+	AssociatedNetworkName string `json:"associatedNetworkName"`
 }
 
 // ReservePublicIPRequest is the request body for reserving a public IP.
@@ -34,9 +34,12 @@ type EnableStaticNatRequest struct {
 
 // ListPublicIPs returns all public IPs.
 func (c *Client) ListPublicIPs(ctx context.Context) ([]PublicIP, error) {
-	var ips []PublicIP
-	err := c.doRequest(ctx, "GET", "/api/v1/networks/public-ip", nil, &ips)
-	return ips, err
+	var resp ListResponse[PublicIP]
+	err := c.doRequest(ctx, "GET", "/api/v1/networks/public-ip", nil, &resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Data, nil
 }
 
 // GetPublicIP returns a single public IP by ID.

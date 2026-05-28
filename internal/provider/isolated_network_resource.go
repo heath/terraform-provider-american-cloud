@@ -87,10 +87,16 @@ func (r *isolatedNetworkResource) Schema(_ context.Context, _ resource.SchemaReq
 			"status": schema.StringAttribute{
 				Computed:    true,
 				Description: "Current status of the network.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"created": schema.StringAttribute{
 				Computed:    true,
 				Description: "Timestamp when the network was created.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}
@@ -140,7 +146,7 @@ func (r *isolatedNetworkResource) Create(ctx context.Context, req resource.Creat
 	plan.Name = types.StringValue(network.Name)
 	plan.Description = types.StringValue(network.Description)
 	plan.Region = types.StringValue(network.Region)
-	plan.Netmask = types.StringValue(network.Netmask)
+	plan.Netmask = types.StringValue(network.CIDR)
 	plan.Gateway = types.StringValue(network.Gateway)
 	plan.Status = types.StringValue(network.Status)
 	plan.Created = types.StringValue(network.Created)
@@ -170,7 +176,7 @@ func (r *isolatedNetworkResource) Read(ctx context.Context, req resource.ReadReq
 	state.Name = types.StringValue(network.Name)
 	state.Description = types.StringValue(network.Description)
 	state.Region = types.StringValue(network.Region)
-	state.Netmask = types.StringValue(network.Netmask)
+	state.Netmask = types.StringValue(network.CIDR)
 	state.Gateway = types.StringValue(network.Gateway)
 	state.Status = types.StringValue(network.Status)
 	state.Created = types.StringValue(network.Created)
@@ -208,7 +214,7 @@ func (r *isolatedNetworkResource) Update(ctx context.Context, req resource.Updat
 	plan.Name = types.StringValue(network.Name)
 	plan.Description = types.StringValue(network.Description)
 	plan.Region = types.StringValue(network.Region)
-	plan.Netmask = types.StringValue(network.Netmask)
+	plan.Netmask = types.StringValue(network.CIDR)
 	plan.Gateway = types.StringValue(network.Gateway)
 	plan.Status = types.StringValue(network.Status)
 	plan.Created = types.StringValue(network.Created)

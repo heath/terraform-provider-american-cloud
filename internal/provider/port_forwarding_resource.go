@@ -3,7 +3,10 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
@@ -15,8 +18,9 @@ import (
 )
 
 var (
-	_ resource.Resource              = &portForwardingResource{}
-	_ resource.ResourceWithConfigure = &portForwardingResource{}
+	_ resource.Resource                = &portForwardingResource{}
+	_ resource.ResourceWithConfigure   = &portForwardingResource{}
+	_ resource.ResourceWithImportState = &portForwardingResource{}
 )
 
 func NewPortForwardingResource() resource.Resource {
@@ -90,9 +94,15 @@ func (r *portForwardingResource) Schema(_ context.Context, _ resource.SchemaRequ
 			},
 			"state": schema.StringAttribute{
 				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"created": schema.StringAttribute{
 				Computed: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}
@@ -119,13 +129,13 @@ func (r *portForwardingResource) Create(ctx context.Context, req resource.Create
 	}
 
 	createReq := &client.CreatePortForwardingRuleRequest{
-		PrivatePort: int(plan.PrivatePort.ValueInt64()),
-		PublicPort:  int(plan.PublicPort.ValueInt64()),
+		PrivatePort: strconv.FormatInt(plan.PrivatePort.ValueInt64(), 10),
+		PublicPort:  strconv.FormatInt(plan.PublicPort.ValueInt64(), 10),
 		Protocol:    plan.Protocol.ValueString(),
 		VMID:        plan.VMID.ValueString(),
 	}
 	if !plan.OpenFirewall.IsNull() {
-		createReq.OpenFirewall = plan.OpenFirewall.ValueBool()
+		createReq.OpenFirewall = strconv.FormatBool(plan.OpenFirewall.ValueBool())
 	}
 
 	rule, err := r.client.CreatePortForwardingRule(ctx, plan.IPAddressID.ValueString(), createReq)
@@ -173,8 +183,12 @@ func (r *portForwardingResource) Read(ctx context.Context, req resource.ReadRequ
 	}
 
 	state.Protocol = types.StringValue(found.Protocol)
-	state.PublicPort = types.Int64Value(int64(found.PublicPort))
-	state.PrivatePort = types.Int64Value(int64(found.PrivatePort))
+	if v, err := strconv.ParseInt(found.PublicPort, 10, 64); err == nil {
+		state.PublicPort = types.Int64Value(v)
+	}
+	if v, err := strconv.ParseInt(found.PrivatePort, 10, 64); err == nil {
+		state.PrivatePort = types.Int64Value(v)
+	}
 	state.VMID = types.StringValue(found.VMID)
 	state.State = types.StringValue(found.State)
 	state.Created = types.StringValue(found.Created)
@@ -199,4 +213,17 @@ func (r *portForwardingResource) Delete(ctx context.Context, req resource.Delete
 	if err != nil && !client.IsNotFound(err) {
 		resp.Diagnostics.AddError("Error deleting port forwarding rule", err.Error())
 	}
+}
+
+func (r *portForwardingResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	parts := strings.SplitN(req.ID, "/", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		resp.Diagnostics.AddError(
+			"Invalid import ID",
+			"Expected format: ip_address_id/rule_id",
+		)
+		return
+	}
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("ip_address_id"), parts[0])...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), parts[1])...)
 }

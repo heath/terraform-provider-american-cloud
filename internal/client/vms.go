@@ -14,50 +14,50 @@ type VM struct {
 	Status         string   `json:"status"`
 	Region         string   `json:"region"`
 	Image          string   `json:"image"`
-	VMPackage      string   `json:"vm_package"`
+	VMPackage      string   `json:"vmPackage"`
 	CPU            int      `json:"cpu"`
-	MemoryMB       int      `json:"memory_mb"`
-	RootDiskGB     int      `json:"root_disk_gb"`
-	IPAddress      string   `json:"ip_address"`
-	NetworkID      string   `json:"network_id"`
+	MemoryMB       int      `json:"memoryMb"`
+	RootDiskGB     int      `json:"rootDiskGb"`
+	IPAddress      string   `json:"ipAddress"`
+	NetworkID      string   `json:"networkId"`
 	Tags           []string `json:"tags"`
-	Created        string   `json:"created"`
+	Created        string   `json:"createdAt"`
 	Password       string   `json:"password,omitempty"`
 	Hostname       string   `json:"hostname"`
 	KeypairNames   []string `json:"keypairs"`
-	NetworkAccess  string   `json:"network_access"`
+	NetworkAccess  string   `json:"networkAccess"`
 }
 
 // VMSpecs specifies custom CPU/memory/disk for VM creation.
 type VMSpecs struct {
 	VCPU       int `json:"vcpu"`
-	MemoryMB   int `json:"memory_mb"`
-	RootDiskGB int `json:"root_disk_gb"`
+	MemoryMB   int `json:"memoryMb"`
+	RootDiskGB int `json:"rootDiskGb"`
 }
 
 // CreateVMRequest is the request body for creating a VM.
 type CreateVMRequest struct {
 	Name              string   `json:"name"`
 	Region            string   `json:"region"`
-	VMPackage         string   `json:"vm_package,omitempty"`
-	VMSpecs           *VMSpecs `json:"vm_specs,omitempty"`
+	VMPackage         string   `json:"vmPackage,omitempty"`
+	VMSpecs           *VMSpecs `json:"vmSpecs,omitempty"`
 	Image             string   `json:"image"`
 	Network           string   `json:"network,omitempty"`
-	SubscriptionPeriod string  `json:"subscription_period,omitempty"`
+	SubscriptionPeriod string  `json:"subscriptionPeriod,omitempty"`
 	Tags              []string `json:"tags,omitempty"`
 	Keypairs          []string `json:"keypairs,omitempty"`
 	Userdata          string   `json:"userdata,omitempty"`
-	NetworkAccess     string   `json:"network_access,omitempty"`
+	NetworkAccess     string   `json:"networkAccess,omitempty"`
 }
 
 // ListVMs returns all virtual machines.
 func (c *Client) ListVMs(ctx context.Context) ([]VM, error) {
-	var vms []VM
-	err := c.doRequest(ctx, "GET", "/api/v1/compute/vms", nil, &vms)
+	var resp ListResponse[VM]
+	err := c.doRequest(ctx, "GET", "/api/v1/compute/vms", nil, &resp)
 	if err != nil {
 		return nil, err
 	}
-	return vms, nil
+	return resp.Data, nil
 }
 
 // GetVM returns a single VM by ID.
@@ -102,7 +102,7 @@ func (c *Client) ScaleVM(ctx context.Context, id string, cpu, memoryMB int) erro
 		query.Set("cpu", fmt.Sprintf("%d", cpu))
 	}
 	if memoryMB > 0 {
-		query.Set("memory_mb", fmt.Sprintf("%d", memoryMB))
+		query.Set("memoryMb", fmt.Sprintf("%d", memoryMB))
 	}
 	return c.doRequestWithQuery(ctx, "PUT", "/api/v1/compute/vms/"+id+"/scale", query, nil, nil)
 }
@@ -110,7 +110,7 @@ func (c *Client) ScaleVM(ctx context.Context, id string, cpu, memoryMB int) erro
 // ResizeVMDisk resizes the root disk of a VM.
 func (c *Client) ResizeVMDisk(ctx context.Context, id string, sizeGB int, reboot bool) error {
 	body := map[string]interface{}{
-		"size_gb": sizeGB,
+		"sizeGb": sizeGB,
 		"reboot":  reboot,
 	}
 	return c.doRequest(ctx, "PUT", "/api/v1/compute/vms/"+id+"/disk-resize", body, nil)

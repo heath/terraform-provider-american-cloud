@@ -8,10 +8,10 @@ type IsolatedNetwork struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Region      string `json:"region"`
-	Netmask     string `json:"netmask"`
+	CIDR        string `json:"cidr"`
 	Gateway     string `json:"gateway"`
 	Status      string `json:"status"`
-	Created     string `json:"created"`
+	Created     string `json:"createdAt"`
 }
 
 // DetailedIsolatedNetwork includes IP address info.
@@ -37,9 +37,12 @@ type UpdateIsolatedNetworkRequest struct {
 
 // ListIsolatedNetworks returns all isolated networks.
 func (c *Client) ListIsolatedNetworks(ctx context.Context) ([]IsolatedNetwork, error) {
-	var networks []IsolatedNetwork
-	err := c.doRequest(ctx, "GET", "/api/v1/networks/isolated", nil, &networks)
-	return networks, err
+	var resp ListResponse[IsolatedNetwork]
+	err := c.doRequest(ctx, "GET", "/api/v1/networks/isolated", nil, &resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Data, nil
 }
 
 // GetIsolatedNetwork returns a single isolated network by ID.
@@ -85,14 +88,14 @@ type VPC struct {
 	CIDR        string `json:"cidr"`
 	Status      string `json:"status"`
 	Region      string `json:"region"`
-	Created     string `json:"created"`
+	Created     string `json:"createdAt"`
 }
 
 // DetailedVPC includes tiers and public IPs.
 type DetailedVPC struct {
 	VPC
 	Tiers     []VPCTier  `json:"tiers"`
-	PublicIPs []PublicIP `json:"public_ips"`
+	PublicIPs []PublicIP `json:"publicIps"`
 }
 
 // CreateVPCRequest is the request body for creating a VPC.
@@ -111,9 +114,12 @@ type UpdateVPCRequest struct {
 
 // ListVPCs returns all VPCs.
 func (c *Client) ListVPCs(ctx context.Context) ([]VPC, error) {
-	var vpcs []VPC
-	err := c.doRequest(ctx, "GET", "/api/v1/networks/vpc", nil, &vpcs)
-	return vpcs, err
+	var resp ListResponse[VPC]
+	err := c.doRequest(ctx, "GET", "/api/v1/networks/vpc", nil, &resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Data, nil
 }
 
 // GetVPC returns a single VPC by ID.
@@ -156,22 +162,22 @@ type VPCTier struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	VPCID       string `json:"vpc_id"`
+	VPCID       string `json:"vpcId"`
 	Gateway     string `json:"gateway"`
 	Netmask     string `json:"netmask"`
-	ACLID       string `json:"acl_id"`
+	ACLID       string `json:"aclId"`
 	Status      string `json:"status"`
-	Created     string `json:"created"`
+	Created     string `json:"createdAt"`
 }
 
 // CreateVPCTierRequest is the request body for creating a VPC tier.
 type CreateVPCTierRequest struct {
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
-	VPCID       string `json:"vpc_id"`
+	VPCID       string `json:"vpcId"`
 	Gateway     string `json:"gateway"`
 	Netmask     string `json:"netmask"`
-	ACLID       string `json:"acl_id,omitempty"`
+	ACLID       string `json:"aclId,omitempty"`
 }
 
 // CreateVPCTier creates a new tier within a VPC.

@@ -6,35 +6,38 @@ import "context"
 type Volume struct {
 	ID      string `json:"id"`
 	Name    string `json:"name"`
-	SizeGB  int    `json:"size_gb"`
+	SizeGB  int    `json:"sizeGb"`
 	Status  string `json:"status"`
-	VMID    string `json:"vm_id"`
+	VMID    string `json:"vmId"`
 	Region  string `json:"region"`
-	Created string `json:"created"`
+	Created string `json:"createdAt"`
 }
 
 // CreateVolumeRequest is the request body for creating a volume.
 type CreateVolumeRequest struct {
 	Name   string `json:"name"`
-	SizeGB int    `json:"size_gb"`
+	SizeGB int    `json:"sizeGb"`
 	Region string `json:"region"`
 }
 
 // ResizeVolumeRequest is the request body for resizing a volume.
 type ResizeVolumeRequest struct {
-	SizeGB int `json:"size_gb"`
+	SizeGB int `json:"newSizeGb"`
 }
 
 // AttachVolumeRequest is the request body for attaching a volume to a VM.
 type AttachVolumeRequest struct {
-	VMID string `json:"vm_id"`
+	VMID string `json:"vmId"`
 }
 
 // ListVolumes returns all block storage volumes.
 func (c *Client) ListVolumes(ctx context.Context) ([]Volume, error) {
-	var volumes []Volume
-	err := c.doRequest(ctx, "GET", "/api/v1/storage/block-storage", nil, &volumes)
-	return volumes, err
+	var resp ListResponse[Volume]
+	err := c.doRequest(ctx, "GET", "/api/v1/storage/block-storage", nil, &resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Data, nil
 }
 
 // GetVolume returns a single volume by ID.

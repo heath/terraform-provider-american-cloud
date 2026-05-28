@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 
 	"terraform-provider-americancloud/internal/client"
 )
@@ -80,6 +81,11 @@ func (p *americancloudProvider) Configure(ctx context.Context, req provider.Conf
 	bearerToken := stringValueOrEnv(config.BearerToken, "AC_BEARER_TOKEN", "")
 	clientID := stringValueOrEnv(config.ClientID, "AC_CLIENT_ID", "")
 	clientSecret := stringValueOrEnv(config.ClientSecret, "AC_CLIENT_SECRET", "")
+
+	tflog.Info(ctx, "Configuring American Cloud client")
+
+	// Mask sensitive fields in logs
+	ctx = tflog.MaskFieldValuesWithFieldKeys(ctx, "client_secret")
 
 	// Validate auth configuration
 	if bearerToken == "" && (clientID == "" || clientSecret == "") {

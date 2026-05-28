@@ -18,20 +18,23 @@ type CreateSSHKeyRequest struct {
 type CreateSSHKeyResponse struct {
 	Name        string `json:"name"`
 	Fingerprint string `json:"fingerprint"`
-	PrivateKey  string `json:"private_key,omitempty"`
+	PrivateKey  string `json:"privateKey,omitempty"`
 }
 
 // ListSSHKeys returns all SSH keys.
 func (c *Client) ListSSHKeys(ctx context.Context) ([]SSHKey, error) {
-	var keys []SSHKey
-	err := c.doRequest(ctx, "GET", "/api/v1/compute/ssh-keys", nil, &keys)
-	return keys, err
+	var resp ListResponse[SSHKey]
+	err := c.doRequest(ctx, "GET", "/api/v1/ssh-keys", nil, &resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Data, nil
 }
 
 // CreateSSHKey creates a new SSH key.
 func (c *Client) CreateSSHKey(ctx context.Context, req *CreateSSHKeyRequest) (*CreateSSHKeyResponse, error) {
 	var resp CreateSSHKeyResponse
-	err := c.doRequest(ctx, "POST", "/api/v1/compute/ssh-keys", req, &resp)
+	err := c.doRequest(ctx, "POST", "/api/v1/ssh-keys", req, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -40,5 +43,5 @@ func (c *Client) CreateSSHKey(ctx context.Context, req *CreateSSHKeyRequest) (*C
 
 // DeleteSSHKey deletes an SSH key by name.
 func (c *Client) DeleteSSHKey(ctx context.Context, name string) error {
-	return c.doRequest(ctx, "DELETE", "/api/v1/compute/ssh-keys/"+name, nil, nil)
+	return c.doRequest(ctx, "DELETE", "/api/v1/ssh-keys/"+name, nil, nil)
 }

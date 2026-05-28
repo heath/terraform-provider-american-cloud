@@ -19,12 +19,12 @@ type VMPackage struct {
 
 // ListPackages returns all available VM packages.
 func (c *Client) ListPackages(ctx context.Context) ([]VMPackage, error) {
-	var packages []VMPackage
-	err := c.doRequest(ctx, "GET", "/api/v1/compute/packages", nil, &packages)
+	var resp ListResponse[VMPackage]
+	err := c.doRequest(ctx, "GET", "/api/v1/compute/packages", nil, &resp)
 	if err != nil {
 		return nil, err
 	}
-	return packages, nil
+	return resp.Data, nil
 }
 
 // GetPackage returns a single package by ID.
