@@ -123,7 +123,8 @@ func (c *Client) UpdateVMHostname(ctx context.Context, id, hostname string) erro
 	return c.doRequestWithQuery(ctx, "PUT", "/api/v1/compute/vms/"+id+"/hostname", query, nil, nil)
 }
 
-// WaitForVMReady polls until the VM reaches "Running" status or the context is cancelled.
+// WaitForVMReady polls until the VM reaches "Running" status and has an IP
+// address assigned, or the context is cancelled.
 func (c *Client) WaitForVMReady(ctx context.Context, id string, pollInterval time.Duration) (*VM, error) {
 	for {
 		vm, err := c.GetVM(ctx, id)
@@ -133,24 +134,29 @@ func (c *Client) WaitForVMReady(ctx context.Context, id string, pollInterval tim
 
 		switch vm.Status {
 		case "Running", "running", "STARTED", "Started":
-			return vm, nil
+			// Don't return until the IP is assigned — the API may report
+			// Running before networking is fully configured.
+			if vm.IPAddress != "" {
+				return vm, nil
+			}
 		case "Error", "error", "Failed", "failed", "ERROR", "FAILED":
 			return vm, fmt.Errorf("VM %s reached error state: %s", id, vm.Status)
 		}
 
 		select {
 		case <-ctx.Done():
-			return vm, fmt.Errorf("timed out waiting for VM %s to be ready (current status: %s)", id, vm.Status)
+			return vm, fmt.Errorf("timed out waiting for VM %s to be ready (current status: %s, ip: %s)", id, vm.Status, vm.IPAddress)
 		case <-time.After(pollInterval):
 			// continue polling
 		}
 	}
 }
 
-// WaitForVMDeleted polls until the VM returns 404 or the context is cancelled.
+// WaitForVMDeleted polls until the VM returns 404, reaches a terminal
+// deletion status, or the context is cancelled.
 func (c *Client) WaitForVMDeleted(ctx context.Context, id string, pollInterval time.Duration) error {
 	for {
-		_, err := c.GetVM(ctx, id)
+		vm, err := c.GetVM(ctx, id)
 		if err != nil {
 			if IsNotFound(err) {
 				return nil
@@ -158,9 +164,18 @@ func (c *Client) WaitForVMDeleted(ctx context.Context, id string, pollInterval t
 			return fmt.Errorf("polling VM %s for deletion: %w", id, err)
 		}
 
+		// Treat terminal states as successful deletion — some APIs keep
+		// the resource visible with a final status before removing it.
+		switch vm.Status {
+		case "Destroyed", "destroyed", "DESTROYED",
+			"Deleted", "deleted", "DELETED",
+			"Expunged", "expunged", "EXPUNGED":
+			return nil
+		}
+
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("timed out waiting for VM %s to be deleted", id)
+			return fmt.Errorf("timed out waiting for VM %s to be deleted (current status: %s)", id, vm.Status)
 		case <-time.After(pollInterval):
 			// continue polling
 		}
